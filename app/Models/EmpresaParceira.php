@@ -28,7 +28,9 @@ class EmpresaParceira extends Model
 
     public function apontamentosAprovados()
     {
+        
         return Apontamento::where('status', 'Aprovado')
+            ->where('faturado', true) 
             ->whereHas('agenda.projeto', function ($query) {
                 $query->where('empresa_parceira_id', $this->id);
             });

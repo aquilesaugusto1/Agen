@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Apontamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AprovacaoController extends Controller
 {
@@ -30,25 +29,30 @@ class AprovacaoController extends Controller
         $user = Auth::user();
         $this->authorizeAction($user, $apontamento);
 
-        $validated = $request->validate(['forcar_aprovacao' => 'sometimes|boolean']);
+        $validated = $request->validate([
+            'forcar_aprovacao' => 'sometimes|boolean',
+            'faturado' => 'required|boolean', 
+        ]);
+        
         $forcar = $validated['forcar_aprovacao'] ?? false;
+        $faturarHoras = $validated['faturado'];
 
         $empresa = $apontamento->agenda->projeto->empresaParceira;
 
-        if ($empresa->saldo_horas < $apontamento->horas_gastas && !$forcar) {
-            return back()->withErrors(['geral' => 'O cliente não tem saldo de horas suficiente. Para aprovar mesmo assim, marque a opção "Forçar aprovação".']);
+        
+        if ($faturarHoras && $empresa->saldo_total < $apontamento->horas_gastas && !$forcar) {
+            return back()->withErrors(['geral' => 'O cliente não tem saldo de horas suficiente para faturar. Para aprovar mesmo assim, marque a opção "Forçar". Se não deseja faturar, escolha a opção "Aprovar (Não Faturar)".']);
         }
+
+        $apontamento->status = 'Aprovado';
+        $apontamento->faturado = $faturarHoras; 
+        $apontamento->aprovado_por = $user->id;
+        $apontamento->data_aprovacao = now();
+        $apontamento->save();
         
-        DB::transaction(function () use ($apontamento, $empresa, $user) {
-            $apontamento->status = 'Aprovado';
-            $apontamento->aprovado_por = $user->id;
-            $apontamento->data_aprovacao = now();
-            $apontamento->save();
-            
-            $empresa->decrement('saldo_horas', $apontamento->horas_gastas);
-        });
-        
-        return redirect()->route('aprovacoes.index')->with('success', 'Apontamento aprovado! O saldo do cliente foi atualizado.');
+        $message = $faturarHoras ? 'Apontamento aprovado e faturado com sucesso! O saldo do cliente foi atualizado.' : 'Apontamento aprovado com sucesso (horas não faturadas).';
+
+        return redirect()->route('aprovacoes.index')->with('success', $message);
     }
 
     public function rejeitar(Request $request, Apontamento $apontamento)
@@ -59,6 +63,7 @@ class AprovacaoController extends Controller
         $validated = $request->validate(['motivo_rejeicao' => 'required|string|max:500']);
 
         $apontamento->status = 'Rejeitado';
+        $apontamento->faturado = false; 
         $apontamento->motivo_rejeicao = $validated['motivo_rejeicao'];
         $apontamento->aprovado_por = $user->id;
         $apontamento->save();
