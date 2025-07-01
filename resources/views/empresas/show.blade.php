@@ -9,8 +9,8 @@
                         </h2>
                          <div class="text-right">
                             <h3 class="text-md font-bold text-gray-500 uppercase">Saldo de Horas</h3>
-                            <p class="text-3xl font-bold {{ $empresa->horas_contratadas < 0 ? 'text-red-600' : 'text-gray-800' }}">
-                                {{ number_format($empresa->horas_contratadas, 2, ',', '.') }}
+                            <p class="text-3xl font-bold {{ $empresa->saldo_total < 0 ? 'text-red-600' : 'text-gray-800' }}">
+                                {{ number_format($empresa->saldo_total, 2, ',', '.') }}
                             </p>
                         </div>
                     </div>

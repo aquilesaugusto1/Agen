@@ -10,7 +10,6 @@
                 </a>
             </div>
 
-            <!-- Filtros -->
             <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
                 <form method="GET" action="{{ route('agendas.alocacao') }}">
                     <div class="flex items-center space-x-4">
@@ -30,7 +29,6 @@
                 </form>
             </div>
 
-            <!-- Tabela de Alocação -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm divide-y divide-gray-200">
@@ -64,8 +62,8 @@
                                             </td>
                                             <td class="px-4 py-2 text-slate-700">{{ $projeto->empresaParceira->nome_empresa }}</td>
                                             <td class="px-4 py-2 text-slate-700">{{ $projeto->nome_projeto }}</td>
-                                            <td class="px-4 py-2 font-bold {{ $projeto->empresaParceira->horas_contratadas < 0 ? 'text-red-600' : 'text-slate-800' }}">
-                                                {{ number_format($projeto->empresaParceira->horas_contratadas, 1) }}h
+                                            <td class="px-4 py-2 font-bold {{ $projeto->empresaParceira->saldo_total < 0 ? 'text-red-600' : 'text-slate-800' }}">
+                                                {{ number_format($projeto->empresaParceira->saldo_total, 1) }}h
                                             </td>
                                             @php
                                                 $horasNoProjeto = $consultor->apontamentos

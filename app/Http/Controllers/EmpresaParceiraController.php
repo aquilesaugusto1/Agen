@@ -20,7 +20,7 @@ class EmpresaParceiraController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'nome_empresa' => 'required|string|max:255|unique:empresas_parceiras',
             'contato_principal' => 'nullable|string|max:255',
             'telefone' => 'nullable|string|max:20',
@@ -29,7 +29,9 @@ class EmpresaParceiraController extends Controller
             'horas_contratadas' => 'nullable|numeric|min:0',
         ]);
 
-        EmpresaParceira::create($request->all());
+        $validatedData['saldo_horas'] = $validatedData['horas_contratadas'] ?? 0;
+
+        EmpresaParceira::create($validatedData);
 
         return redirect()->route('empresas.index')
                          ->with('success', 'Empresa parceira criada com sucesso.');
@@ -47,7 +49,7 @@ class EmpresaParceiraController extends Controller
 
     public function update(Request $request, EmpresaParceira $empresa)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'nome_empresa' => 'required|string|max:255|unique:empresas_parceiras,nome_empresa,' . $empresa->id,
             'contato_principal' => 'nullable|string|max:255',
             'telefone' => 'nullable|string|max:20',
@@ -56,7 +58,13 @@ class EmpresaParceiraController extends Controller
             'horas_contratadas' => 'nullable|numeric|min:0',
         ]);
 
-        $empresa->update($request->all());
+        $horasContratadasAnteriores = $empresa->horas_contratadas;
+        $novasHorasContratadas = $validatedData['horas_contratadas'] ?? 0;
+        
+        $diferencaHoras = $novasHorasContratadas - $horasContratadasAnteriores;
+        $validatedData['saldo_horas'] = $empresa->saldo_horas + $diferencaHoras;
+
+        $empresa->update($validatedData);
 
         return redirect()->route('empresas.index')
                          ->with('success', 'Empresa parceira atualizada com sucesso.');

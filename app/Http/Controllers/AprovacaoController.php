@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apontamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AprovacaoController extends Controller
 {
@@ -34,16 +35,20 @@ class AprovacaoController extends Controller
 
         $empresa = $apontamento->agenda->projeto->empresaParceira;
 
-        if ($empresa->saldo_total < $apontamento->horas_gastas && !$forcar) {
+        if ($empresa->saldo_horas < $apontamento->horas_gastas && !$forcar) {
             return back()->withErrors(['geral' => 'O cliente não tem saldo de horas suficiente. Para aprovar mesmo assim, marque a opção "Forçar aprovação".']);
         }
-
-        $apontamento->status = 'Aprovado';
-        $apontamento->aprovado_por = $user->id;
-        $apontamento->data_aprovacao = now();
-        $apontamento->save();
         
-        return redirect()->route('aprovacoes.index')->with('success', 'Apontamento aprovado com sucesso! O saldo do cliente foi atualizado.');
+        DB::transaction(function () use ($apontamento, $empresa, $user) {
+            $apontamento->status = 'Aprovado';
+            $apontamento->aprovado_por = $user->id;
+            $apontamento->data_aprovacao = now();
+            $apontamento->save();
+            
+            $empresa->decrement('saldo_horas', $apontamento->horas_gastas);
+        });
+        
+        return redirect()->route('aprovacoes.index')->with('success', 'Apontamento aprovado! O saldo do cliente foi atualizado.');
     }
 
     public function rejeitar(Request $request, Apontamento $apontamento)

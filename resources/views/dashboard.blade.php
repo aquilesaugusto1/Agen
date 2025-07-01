@@ -6,8 +6,6 @@
         </div>
 
         @if(Auth::user()->funcao === 'admin')
-            <!-- ======================= DASHBOARD DO ADMIN ======================= -->
-            
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="p-6 rounded-lg shadow-lg bg-indigo-500 text-white">
                     <p class="text-sm font-medium text-indigo-100">{{ array_keys($stats)[0] }}</p>
@@ -40,7 +38,7 @@
                             @forelse($projetosCriticos as $projeto)
                                 <li class="flex justify-between items-center text-sm">
                                     <span class="font-medium text-slate-700">{{ $projeto->nome_projeto }}</span>
-                                    <span class="font-bold text-red-500">{{ number_format($projeto->empresaParceira->horas_contratadas, 1) }}h</span>
+                                    <span class="font-bold text-red-500">{{ number_format($projeto->empresaParceira->saldo_total, 1) }}h</span>
                                 </li>
                             @empty
                                 <p class="text-sm text-slate-500">Nenhum projeto com saldo crítico.</p>
@@ -112,7 +110,6 @@
             @endpush
 
         @else
-            <!-- ======================= DASHBOARD DO TECHLEAD / CONSULTOR ======================= -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @php $colors = ['bg-indigo-500', 'bg-purple-500', 'bg-teal-500']; $i = 0; @endphp
                 @foreach($stats as $label => $value)

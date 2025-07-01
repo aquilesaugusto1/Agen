@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EmpresaParceira extends Model
 {
@@ -35,7 +36,7 @@ class EmpresaParceira extends Model
 
     public function getHorasGastasAttribute()
     {
-        return $this->apontamentosAprovados()->sum('horas_gastas');
+        return $this->apontamentosAprovados()->sum(DB::raw('ABS(horas_gastas)'));
     }
 
     public function getSaldoTotalAttribute()

@@ -29,7 +29,6 @@ class DashboardController extends Controller
                     'Empresas' => EmpresaParceira::count(),
                 ];
 
-                // Preparar dados para o gráfico de Agendas
                 $endDate = Carbon::now();
                 $startDate = Carbon::now()->subMonths(5)->startOfMonth();
                 $dbData = Agenda::select(
@@ -67,11 +66,11 @@ class DashboardController extends Controller
                 $data['chartAgendadas'] = $agendadasValues;
 
                 $data['projetosCriticos'] = Projeto::with('empresaParceira')
-                    ->whereHas('empresaParceira', function ($query) {
-                        $query->where('horas_contratadas', '<', 10);
+                    ->get()
+                    ->filter(function ($projeto) {
+                        return $projeto->empresaParceira->saldo_total < 10;
                     })
-                    ->limit(5)
-                    ->get();
+                    ->take(5);
                 
                 $data['consultoresAtivos'] = Consultor::withCount(['apontamentos as horas_30_dias' => function ($query) {
                         $query->select(DB::raw('sum(horas_gastas)'))
