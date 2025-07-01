@@ -7,6 +7,9 @@ use App\Models\Apontamento;
 use App\Models\Consultor;
 use App\Models\EmpresaParceira;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ApontamentosExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RelatorioController extends Controller
 {
@@ -25,6 +28,7 @@ class RelatorioController extends Controller
             'data_fim' => 'required|date|after_or_equal:data_inicio',
             'consultor_id' => 'nullable|exists:consultores,id',
             'empresa_id' => 'nullable|exists:empresas_parceiras,id',
+            'formato' => 'required|in:html,pdf,excel'
         ]);
 
         $query = Apontamento::with('consultor', 'agenda.projeto.empresaParceira')
@@ -40,8 +44,21 @@ class RelatorioController extends Controller
                 $q->where('empresa_parceira_id', $request->empresa_id);
             });
         }
-        
+
         $apontamentos = $query->latest('data_apontamento')->get();
+        $filtros = $request->only(['data_inicio', 'data_fim', 'consultor_id', 'empresa_id']);
+
+        if ($request->formato === 'pdf') {
+            $pdf = Pdf::loadView('relatorios.pdf', [
+                'apontamentos' => $apontamentos,
+                'filtros' => $filtros
+            ]);
+            return $pdf->download('relatorio_apontamentos.pdf');
+        }
+
+        if ($request->formato === 'excel') {
+            return Excel::download(new ApontamentosExport($apontamentos, $filtros), 'relatorio_apontamentos.xlsx');
+        }
 
         $kpis = [
             'total_horas' => $apontamentos->sum('horas_gastas'),
@@ -51,11 +68,9 @@ class RelatorioController extends Controller
 
         $horasPorCliente = $apontamentos->groupBy('agenda.projeto.empresaParceira.nome_empresa')
             ->map->sum('horas_gastas')->sortDesc();
-            
+
         $horasPorConsultor = $apontamentos->groupBy('consultor.nome')
             ->map->sum('horas_gastas')->sortDesc();
-
-        $filtros = $request->only(['data_inicio', 'data_fim', 'consultor_id', 'empresa_id']);
 
         return view('relatorios.resultado', compact('apontamentos', 'kpis', 'horasPorCliente', 'horasPorConsultor', 'filtros'));
     }
